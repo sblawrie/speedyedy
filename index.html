@@ -22,6 +22,7 @@
             align-items: center;
             max-width: 90vw;
             width: 800px;
+            margin-top:100px;
         }
         #gameCanvas {
             width: 100%;
@@ -69,50 +70,6 @@
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
-    // ASCII art sprites
-    const sprites = {
-        eden: [
-            "  O  ",
-            " /|\\ ",
-            " / \\ "
-        ],
-        toxicRelationship: [
-            " \\!/ ",
-            "  |  ",
-            " / \\ "
-        ],
-        financialStress: [
-            " ___ ",
-            "|$$$|",
-            "|___|"
-        ],
-        workPressure: [
-            " ___ ",
-            "|   |",
-            "|___|"
-        ],
-        supportiveFriend: [
-            " \\O/ ",
-            "  |  ",
-            " / \\ "
-        ],
-        selfCare: [
-            "  *  ",
-            " \\|/ ",
-            "  |  "
-        ],
-        careerAchievement: [
-            " ___ ",
-            "| A |",
-            "|___|"
-        ],
-        boss: [
-            "  O  ",
-            " /|\\ ",
-            "_/ \\_"
-        ]
-    };
 
     // Load images
     const images = {
@@ -182,8 +139,9 @@
         score: 0,
         gameOver: false,
         paused: false,
-        image: images.eden,
         time: 0,
+        minTimeToSpawnJonathan: null,
+        gameOverMessage: 'Game Over!'
     };
 
     // Obstacle types
@@ -196,7 +154,7 @@
     // Bonus types
     const bonusTypes = [
         { name: 'Seeds of Peace', width: 50, height: 50, image: images.seedsOfPeace },
-        { name: 'Therapy', width: 50, height: 50, image: images.therapy },
+        { name: 'Therapy', width: 80, height: 50, image: images.therapy },
         { name: 'Poppop', width: 100, height: 100, image: images.poppop },
         { name: 'Scot', color: 'gold', width: 50, height: 50, image: images.scot }
     ];
@@ -214,7 +172,7 @@
         const container = document.getElementById('gameContainer');
         const containerWidth = container.clientWidth;
         const containerHeight = window.innerHeight * 0.7; // 70% of viewport height
-        const aspectRatio = 2; // width:height ratio of 2:1
+        const aspectRatio = 1.5; // width:height ratio of 2:1
 
         if (containerWidth / aspectRatio > containerHeight) {
             canvas.height = containerHeight;
@@ -267,7 +225,7 @@
                 gameState.score += 10;
             }
             if (checkCollision(gameState.eden, obstacle) && !gameState.eden.invulnerable) {
-                hitObstacle(obstacle);
+                hitObstacle(obstacle, index);
             }
         });
 
@@ -285,7 +243,11 @@
         if (gameState.jonathan) {
             gameState.jonathan.x -= 2;
             if (checkCollision(gameState.eden, gameState.jonathan)) {
+                gameState.gameOverMessage = 'Congratulations!';
                 gameState.gameOver = true;
+            }
+            if (gameState.jonathan.x + jonathan.width < 0) {
+                gameState.jonathan = null;
             }
         };
 
@@ -303,10 +265,10 @@
         }
 
         // Spawn new obstacles, bonuses, and bosses
-        if (!gameState.jonathan && !bossTypes.length) spawnJonathan();
+        if (!gameState.jonathan && Number.isInteger(gameState.minTimeToSpawnJonathan) && (gameState.time > gameState.minTimeToSpawnJonathan)) spawnJonathan();
         if (Math.random() < 0.01) spawnObstacle();
         if (Math.random() < 0.01) spawnBonus();
-        if (gameState.bosses.length === 0 && bossTypes.length && Math.random() < 0.002) spawnBoss();
+        if (gameState.bosses.length === 0 && bossTypes.length && Math.random() < 0.003) spawnBoss();
 
         // Check for game over
         if (gameState.eden.health <= 0) {
@@ -323,20 +285,12 @@
 
         // Draw obstacles
         gameState.obstacles.forEach(obstacle => {
-            if (obstacle.image) {
-                drawImage(obstacle.image, obstacle.x, obstacle.y, obstacle.width, obstacle.height, 'red');
-            } else {
-                drawSprite(obstacle.sprite, obstacle.x, obstacle.y, obstacle.color);
-            }
+            drawImage(obstacle.image, obstacle.x, obstacle.y, obstacle.width, obstacle.height, 'red');
         });
 
         // Draw bonuses
         gameState.bonuses.forEach(bonus => {
-            if (bonus.image) {
-                drawImage(bonus.image, bonus.x, bonus.y, bonus.width, bonus.height, 'green');
-            } else {
-                drawSprite(bonus.sprite, bonus.x, bonus.y, bonus.color);
-            }
+            drawImage(bonus.image, bonus.x, bonus.y, bonus.width, bonus.height, 'green');
         });
 
         // Draw boss
@@ -344,7 +298,6 @@
             if (gameState.time % 20 < 10) {
                 drawImage(boss.image, boss.x, boss.y, boss.width, boss.height, 'red', borderWidth = 8);
             }
-            // drawImage(boss.image, boss.x, boss.y, boss.width, boss.height, 'red', borderWidth = 8);
         });
 
         if (gameState.jonathan) {
@@ -366,17 +319,8 @@
         if (gameState.gameOver) {
             ctx.fillStyle = 'black';
             ctx.font = '40px Arial';
-            ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2);
+            ctx.fillText(gameState.gameOverMessage || 'Game Over!', canvas.width / 2 - 100, canvas.height / 2);
         }
-    }
-
-    // Draw sprite
-    function drawSprite(sprite, x, y, color) {
-        ctx.fillStyle = color;
-        ctx.font = '10px monospace';
-        sprite.forEach((row, i) => {
-            ctx.fillText(row, x, y + i * 10);
-        });
     }
 
     function drawImage(image, x, y, width, height, borderColor, borderWidth = 4) {
@@ -391,7 +335,8 @@
     // Handle user input
     document.addEventListener('keydown', (event) => {
         if (event.code === 'Space') {
-            console.log('Jump!');
+            // disable default spacebar scroll
+            event.preventDefault();
             gameState.eden.jumping = true;
             gameState.eden.jumpRemaining = configuration.jumpStrength;
         }
@@ -428,6 +373,9 @@
         });
         // pop this specific boss from bosstypes
         bossTypes.splice(bossIndex, 1);
+        if (bossTypes.length === 0) {
+            gameState.minTimeToSpawnJonathan = gameState.time + 1000;
+        }
     }
 
     function spawnJonathan() {
@@ -440,7 +388,8 @@
     }
 
     // Hit obstacle
-    function hitObstacle(obstacle) {
+    function hitObstacle(obstacle, index) {
+        gameState.obstacles.splice(index, 1);
         gameState.eden.health -= 10;
         gameState.eden.invulnerable = true;
         setTimeout(() => { gameState.eden.invulnerable = false; }, 1000);

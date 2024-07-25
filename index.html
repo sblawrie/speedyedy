@@ -84,7 +84,7 @@
         scot: new Image(),
         walzer: new Image(),
         klonopin: new Image(),
-        jake: new Image(),
+        dan: new Image(),
         seedsOfPeace: new Image(),
         nationals: new Image(),
         therapy: new Image(),
@@ -92,6 +92,7 @@
         haley: new Image(),
         jonathan: new Image(),
         adam: new Image(),
+        tigist: new Image(),
     };
 
     const configuration = {
@@ -104,7 +105,7 @@
     images.eden.src = 'eden.png';
     images.walzer.src = 'https://www.cooperhealth.org/sites/default/files/2023-10/Emily%20Walzer%20MD%20-%20web.jpg';
     images.klonopin.src = 'https://zinniahealth.com/_next/image?url=https%3A%2F%2Fcdn.zinniahealth.com%2Fwp-content%2Fuploads%2F20220913144452%2Fklonopin-scaled.jpg&w=3840&q=75';
-    images.jake.src = 'https://c8.alamy.com/comp/2PCRDTR/washington-nationals-owner-mark-lerner-center-hands-out-free-baseball-hats-to-fans-with-his-son-jacob-right-at-rfk-stadium-on-friday-july-21-2006-in-washington-before-the-nationals-played-the-chicago-cubs-in-a-baseball-game-ap-photolawrence-jackson-2PCRDTR.jpg';
+    images.dan.src = 'https://muschealth.org/-/sm/health/psychiatry/youth-collaborative/i/hashemi-daniel.jpg';
     images.seedsOfPeace.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGkF5IBWbewtMEVONPJ1PZH2xSXFPXzpNlyw&s';
     images.nationals.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/wsh.png';
     images.therapy.src = 'https://www.verywellmind.com/thmb/aNigsYshgeBFgbu1_DsvnNsYEHs=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-1368615203-4c27e5cf53214c59b5243fffe2cb7f24.jpg';
@@ -113,6 +114,7 @@
     images.jonathan.src = 'https://images.squarespace-cdn.com/content/v1/6605bb2b36988505ef812dda/42257c89-803d-4a72-a473-37c68a5dcfc7/TAN_polaroidNote.png?format=1000w';
     images.scot.src = 'https://miro.medium.com/v2/resize:fit:2400/1*jPIwQyBjRnZ4ShS5K2xIKw.jpeg'
     images.adam.src = 'https://yt3.googleusercontent.com/ytc/AIdro_kyrlEwy7066SJhd05TNttudvq8rHWVisNwlEOI_RQrVeg=s900-c-k-c0x00ffffff-no-rj';
+    images.tigist.src = 'https://www.debevoise.com/-/media/images/careers-update/dp_march_172468finalflat.jpg?rev=735516b5f21e478195b2edbbc9374cf0&hash=59B5B492EA6760BF591CE9ADA9E6B8FB';
 
     // Wait for all images to load before starting the game
     Promise.all(Object.values(images).map(img => new Promise(resolve => img.onload = resolve)))
@@ -128,7 +130,6 @@
             y: 0, // We'll set this properly in the resizeCanvas function
             width: 50,
             height: 50,
-            speed: 5,
             jumping: false,
             jumpRemaining: configuration.jumpStrength,
             health: 100,
@@ -150,7 +151,7 @@
     // Obstacle types
     const obstacleTypes = [
         { name: 'Klonopin', width: 50, height: 50, image: images.klonopin },
-        { name: 'Jake', width: 50, height: 50, image: images.jake },
+        { name: 'Dan', width: 50, height: 75, image: images.dan },
         { name: 'Nationals', width: 50, height: 50, image: images.nationals },
     ];
 
@@ -159,7 +160,8 @@
         { name: 'Seeds of Peace', width: 50, height: 50, image: images.seedsOfPeace },
         { name: 'Therapy', width: 80, height: 50, image: images.therapy },
         { name: 'Poppop', width: 100, height: 100, image: images.poppop },
-        { name: 'Scot', color: 'gold', width: 50, height: 50, image: images.scot }
+        { name: 'Scot', width: 50, height: 50, image: images.scot },
+        { name: 'Tigist', width: 80, height: 50, image: images.tigist }
     ];
 
     // Boss type
@@ -223,7 +225,7 @@
 
         // Move obstacles and check collisions
         gameState.obstacles.forEach((obstacle, index) => {
-            obstacle.x -= 2;
+            obstacle.x -= obstacle.speed;
             if (obstacle.x + obstacle.width < 0) {
                 gameState.obstacles.splice(index, 1);
                 gameState.score += 10;
@@ -235,7 +237,7 @@
 
         // Move bonuses and check collisions
         gameState.bonuses.forEach((bonus, index) => {
-            bonus.x -= 2;
+            bonus.x -= bonus.speed;
             if (bonus.x + bonus.width < 0) {
                 gameState.bonuses.splice(index, 1);
             }
@@ -355,6 +357,7 @@
     // Spawn a random obstacle
     function spawnObstacle() {
         const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+        type.speed = Math.random() * 4 + 1;
         gameState.obstacles.push({
             ...type,
             x: canvas.width,
@@ -365,6 +368,7 @@
     // Spawn a random bonus
     function spawnBonus() {
         const type = bonusTypes[Math.floor(Math.random() * bonusTypes.length)];
+        type.speed = Math.random() * 4 + 1;
         gameState.bonuses.push({
             ...type,
             x: canvas.width,

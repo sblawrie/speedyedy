@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eden's Wedding Gift Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 90vw;
+            width: 800px;
+        }
+        #gameCanvas {
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+            border: 2px solid #333;
+            background-color: white;
+        }
+        #directions {
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .answerButton {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    <div id="directions">
+        <h2>How to Play:</h2>
+        <p>Help Eden navigate through life's challenges!</p>
+        <ul>
+            <li>Press <strong>Spacebar</strong> to make Eden jump</li>
+            <li>Avoid obstacles (purple, brown, gray figures)</li>
+            <li>Collect bonuses (yellow, light blue, gold figures)</li>
+            <li>Watch out for the big red boss!</li>
+        </ul>
+        <p>Stay healthy and score as high as you can!</p>
+    </div>
+</div>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // ASCII art sprites
+    const sprites = {
+        eden: [
+            "  O  ",
+            " /|\\ ",
+            " / \\ "
+        ],
+        toxicRelationship: [
+            " \\!/ ",
+            "  |  ",
+            " / \\ "
+        ],
+        financialStress: [
+            " ___ ",
+            "|$$$|",
+            "|___|"
+        ],
+        workPressure: [
+            " ___ ",
+            "|   |",
+            "|___|"
+        ],
+        supportiveFriend: [
+            " \\O/ ",
+            "  |  ",
+            " / \\ "
+        ],
+        selfCare: [
+            "  *  ",
+            " \\|/ ",
+            "  |  "
+        ],
+        careerAchievement: [
+            " ___ ",
+            "| A |",
+            "|___|"
+        ],
+        boss: [
+            "  O  ",
+            " /|\\ ",
+            "_/ \\_"
+        ]
+    };
+
+    // Load images
+    const images = {
+        eden: new Image(),
+        toxicRelationship: new Image(),
+        financialStress: new Image(),
+        workPressure: new Image(),
+        supportiveFriend: new Image(),
+        selfCare: new Image(),
+        careerAchievement: new Image(),
+        boss: new Image(),
+        scot: new Image(),
+        walzer: new Image(),
+        klonopin: new Image(),
+        jake: new Image(),
+        seedsOfPeace: new Image(),
+        nationals: new Image(),
+        therapy: new Image(),
+        poppop: new Image(),
+        haley: new Image(),
+    };
+
+    const configuration = {
+        jumpStrength: 5,
+        speed: 25, //the higher the number, the slower the game
+        gravity: 0.3 //the higher the number, the faster Eden falls
+    }
+
+    // Set source for each image
+    images.eden.src = 'eden.png';
+    images.walzer.src = 'https://www.cooperhealth.org/sites/default/files/2023-10/Emily%20Walzer%20MD%20-%20web.jpg';
+    images.klonopin.src = 'https://zinniahealth.com/_next/image?url=https%3A%2F%2Fcdn.zinniahealth.com%2Fwp-content%2Fuploads%2F20220913144452%2Fklonopin-scaled.jpg&w=3840&q=75';
+    images.jake.src = 'https://c8.alamy.com/comp/2PCRDTR/washington-nationals-owner-mark-lerner-center-hands-out-free-baseball-hats-to-fans-with-his-son-jacob-right-at-rfk-stadium-on-friday-july-21-2006-in-washington-before-the-nationals-played-the-chicago-cubs-in-a-baseball-game-ap-photolawrence-jackson-2PCRDTR.jpg';
+    images.seedsOfPeace.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGkF5IBWbewtMEVONPJ1PZH2xSXFPXzpNlyw&s';
+    images.nationals.src = 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/wsh.png';
+    images.therapy.src = 'https://www.verywellmind.com/thmb/aNigsYshgeBFgbu1_DsvnNsYEHs=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-1368615203-4c27e5cf53214c59b5243fffe2cb7f24.jpg';
+    images.poppop.src = 'https://imageio.forbes.com/specials-images/imageserve/5ba5182d4bbe6f79516f57f2/0x0.jpg?format=jpg&crop=2615,2615,x12,y6,safe&height=416&width=416&fit=bounds';
+    images.haley.src = 'https://d1hbpr09pwz0sk.cloudfront.net/profile_pic/haley-tanenbaum-ef7c7a4f';
+    images.toxicRelationship.src = 'path/to/toxic-relationship.png';
+    images.financialStress.src = 'path/to/financial-stress.png';
+    images.workPressure.src = 'path/to/work-pressure.png';
+    images.supportiveFriend.src = 'path/to/supportive-friend.png';
+    images.scot.src = 'https://miro.medium.com/v2/resize:fit:2400/1*jPIwQyBjRnZ4ShS5K2xIKw.jpeg'
+    images.selfCare.src = 'path/to/self-care.png';
+    images.careerAchievement.src = 'path/to/career-achievement.png';
+    images.boss.src = 'path/to/boss.png';
+
+    // Wait for all images to load before starting the game
+    Promise.all(Object.values(images).map(img => new Promise(resolve => img.onload = resolve)))
+        .then(() => {
+            // Start the game here
+            gameLoop();
+        });
+
+    // Game state
+    const gameState = {
+        eden: {
+            x: 50,
+            y: 0, // We'll set this properly in the resizeCanvas function
+            width: 50,
+            height: 50,
+            speed: 5,
+            jumping: false,
+            jumpRemaining: configuration.jumpStrength,
+            health: 100,
+            invulnerable: false
+        },
+        obstacles: [],
+        bonuses: [],
+        bosses: [],
+        score: 0,
+        gameOver: false,
+        paused: false,
+        image: images.eden,
+        time: 0,
+    };
+
+    // Obstacle types
+    const obstacleTypes = [
+        { name: 'Klonopin', width: 50, height: 50, image: images.klonopin },
+        { name: 'Jake', width: 50, height: 50, image: images.jake },
+        { name: 'Nationals', width: 50, height: 50, image: images.nationals },
+    ];
+
+    // Bonus types
+    const bonusTypes = [
+        { name: 'Seeds of Peace', width: 50, height: 50, image: images.seedsOfPeace },
+        { name: 'Therapy', width: 50, height: 50, image: images.therapy },
+        { name: 'Poppop', width: 100, height: 100, image: images.poppop },
+        { name: 'Scot', color: 'gold', width: 50, height: 50, image: images.scot }
+    ];
+
+    // Boss type
+    const bossTypes = [
+        { name: 'A Hungry Walzer', width: 80, height: 100, question: 'Oh no! You ran into a Hungry Walzer! What should you do?', answers: ['Feed her immediately', 'Call Dan.', 'Fight with her.'], correctAnswer: 'Feed her immediately', image: images.walzer},
+        { name: 'Haley', width: 80, height: 100, question: 'Oh no! Haley is getting married! What should you do?', answers: ['Speak at her wedding', 'Threaten to move to California', 'More therapy'], correctAnswer: 'Speak at her wedding', image: images.haley },
+    ];
+
+    // Set canvas size and adjust game elements
+    function resizeCanvas() {
+        const container = document.getElementById('gameContainer');
+        const containerWidth = container.clientWidth;
+        const containerHeight = window.innerHeight * 0.7; // 70% of viewport height
+        const aspectRatio = 2; // width:height ratio of 2:1
+
+        if (containerWidth / aspectRatio > containerHeight) {
+            canvas.height = containerHeight;
+            canvas.width = containerHeight * aspectRatio;
+        } else {
+            canvas.width = containerWidth;
+            canvas.height = containerWidth / aspectRatio;
+        }
+
+        // Adjust Eden's position
+        gameState.eden.y = canvas.height - 100; // Position Eden above the bottom of the canvas
+    }
+
+    // Call resizeCanvas initially and on window resize
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Game loop
+    function gameLoop() {
+        if (!gameState.gameOver) {
+            update();
+            setTimeout(() => {
+                render();
+                requestAnimationFrame(gameLoop);
+            }, configuration.speed);
+        }
+    }
+
+    // Update game state
+    function update() {
+        if (gameState.paused) {
+            return;
+        }
+        gameState.time++;
+        // Handle Eden's movement and jumping
+        if (gameState.eden.jumping) {
+            gameState.eden.y -= gameState.eden.jumpRemaining;
+            gameState.eden.jumpRemaining -= configuration.gravity;
+            if (gameState.eden.y > canvas.height - 100) { // Check against the ground level
+                gameState.eden.jumping = false;
+                gameState.eden.y = canvas.height - 100;  // Set to ground level
+            }
+        }
+
+        // Move obstacles and check collisions
+        gameState.obstacles.forEach((obstacle, index) => {
+            obstacle.x -= 2;
+            if (obstacle.x + obstacle.width < 0) {
+                gameState.obstacles.splice(index, 1);
+                gameState.score += 10;
+            }
+            if (checkCollision(gameState.eden, obstacle) && !gameState.eden.invulnerable) {
+                hitObstacle(obstacle);
+            }
+        });
+
+        // Move bonuses and check collisions
+        gameState.bonuses.forEach((bonus, index) => {
+            bonus.x -= 2;
+            if (bonus.x + bonus.width < 0) {
+                gameState.bonuses.splice(index, 1);
+            }
+            if (checkCollision(gameState.eden, bonus)) {
+                collectBonus(bonus, index);
+            }
+        });
+
+        // Move boss and check collision
+        if (gameState.bosses.length > 0) {
+            const boss = gameState.bosses[0];
+            boss.x -= 1;
+            if (boss.x + boss.width < 0) {
+                gameState.bosses.pop();
+                gameState.score += 100;
+            }
+            if (checkCollision(gameState.eden, boss) && !gameState.eden.invulnerable) {
+                hitBoss(boss);
+            }
+        }
+
+        // Spawn new obstacles, bonuses, and bosses
+        if (Math.random() < 0.01) spawnObstacle();
+        if (Math.random() < 0.01) spawnBonus();
+        if (gameState.bosses.length === 0 && bossTypes.length && Math.random() < 0.001) spawnBoss();
+
+        // Check for game over
+        if (gameState.eden.health <= 0) {
+            gameState.gameOver = true;
+        }
+    }
+
+    // Render game objects
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Eden
+        drawImage(images.eden, gameState.eden.x, gameState.eden.y, gameState.eden.width, gameState.eden.height);
+
+        // Draw obstacles
+        gameState.obstacles.forEach(obstacle => {
+            if (obstacle.image) {
+                drawImage(obstacle.image, obstacle.x, obstacle.y, obstacle.width, obstacle.height, 'red');
+            } else {
+                drawSprite(obstacle.sprite, obstacle.x, obstacle.y, obstacle.color);
+            }
+        });
+
+        // Draw bonuses
+        gameState.bonuses.forEach(bonus => {
+            if (bonus.image) {
+                drawImage(bonus.image, bonus.x, bonus.y, bonus.width, bonus.height, 'green');
+            } else {
+                drawSprite(bonus.sprite, bonus.x, bonus.y, bonus.color);
+            }
+        });
+
+        // Draw boss
+        gameState.bosses.forEach(boss => {
+            if (gameState.time % 20 < 10) {
+                drawImage(boss.image, boss.x, boss.y, boss.width, boss.height, 'red', borderWidth = 8);
+            }
+            // drawImage(boss.image, boss.x, boss.y, boss.width, boss.height, 'red', borderWidth = 8);
+        });
+
+        // Draw health bar
+        ctx.fillStyle = 'red';
+        ctx.fillRect(10, 40, gameState.eden.health * 2, 20);
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect(10, 40, 200, 20);
+
+        // Draw score
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`Score: ${gameState.score}`, 10, 30);
+
+        // Draw game over message
+        if (gameState.gameOver) {
+            ctx.fillStyle = 'black';
+            ctx.font = '40px Arial';
+            ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2);
+        }
+    }
+
+    // Draw sprite
+    function drawSprite(sprite, x, y, color) {
+        ctx.fillStyle = color;
+        ctx.font = '10px monospace';
+        sprite.forEach((row, i) => {
+            ctx.fillText(row, x, y + i * 10);
+        });
+    }
+
+    function drawImage(image, x, y, width, height, borderColor, borderWidth = 4) {
+        // draw the image with borderColor around the outside and with ridges
+        if (borderColor) {
+            ctx.fillStyle = borderColor;
+            ctx.fillRect(x - borderWidth, y - borderWidth, width + borderWidth * 2, height + borderWidth * 2);
+        }
+        ctx.drawImage(image, x, y, width, height);
+    }
+
+    // Handle user input
+    document.addEventListener('keydown', (event) => {
+        if (event.code === 'Space') {
+            console.log('Jump!');
+            gameState.eden.jumping = true;
+            gameState.eden.jumpRemaining = configuration.jumpStrength;
+        }
+    });
+
+    // Spawn a random obstacle
+    function spawnObstacle() {
+        const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+        gameState.obstacles.push({
+            ...type,
+            x: canvas.width,
+            y: Math.random() * (canvas.height - 150) // Adjust to ensure bonuses aren't too low
+        });
+    }
+
+    // Spawn a random bonus
+    function spawnBonus() {
+        const type = bonusTypes[Math.floor(Math.random() * bonusTypes.length)];
+        gameState.bonuses.push({
+            ...type,
+            x: canvas.width,
+            y: Math.random() * (canvas.height - 150) // Adjust to ensure bonuses aren't too low
+        });
+    }
+
+    function spawnJonath
+
+    // Spawn a boss
+    function spawnBoss() {
+        const bossIndex = Math.floor(Math.random() * bossTypes.length);
+        const bossType = bossTypes[bossIndex];
+        gameState.bosses.push({
+            ...bossType,
+            x: canvas.width,
+            y: canvas.height - 100 - bossType.height // Position boss on the ground
+        });
+        // pop this specific boss from bosstypes
+        bossTypes.splice(bossIndex, 1);
+    }
+
+    // Hit obstacle
+    function hitObstacle(obstacle) {
+        gameState.eden.health -= 10;
+        gameState.eden.invulnerable = true;
+        setTimeout(() => { gameState.eden.invulnerable = false; }, 1000);
+        showCollisionEffect(obstacle);
+    }
+
+    // Hit boss
+    function hitBoss(boss) {
+        gameState.eden.health -= 20;
+        gameState.eden.invulnerable = true;
+        setTimeout(() => { gameState.eden.invulnerable = false; }, 1000);
+        showCollisionEffect(boss);
+        gameState.paused = true;
+        showBossPrompt(boss);
+    }
+
+    function showBossPrompt(boss) {
+        const bossPrompt = document.createElement('div');
+        bossPrompt.style.position = 'absolute';
+        bossPrompt.style.top = '50%';
+        bossPrompt.style.left = '50%';
+        bossPrompt.style.width = '500px';
+        bossPrompt.style.textAlign = 'center';
+        bossPrompt.style.height = '200px';
+        bossPrompt.style.transform = 'translate(-50%, -50%)';
+        bossPrompt.style.backgroundColor = 'white';
+        bossPrompt.style.padding = '20px';
+        bossPrompt.style.border = '2px solid black';
+        bossPrompt.style.borderRadius = '5px';
+        bossPrompt.innerHTML = `<h2>${boss.question}</h2>`;
+
+        boss.answers.forEach(answer => {
+            const button = document.createElement('button');
+            button.className = 'answerButton';
+            button.textContent = answer;
+            button.addEventListener('click', () => {
+                console.log('clicked');
+                if (answer === boss.correctAnswer) {
+                    gameState.bosses.pop();
+                    gameState.score += 100;
+                    console.log('Correct answer!');
+                } else {
+                    gameState.eden.health -= 10;
+                    console.log('Wrong answer!');
+                }
+                gameState.paused = false;
+                document.body.removeChild(bossPrompt);
+            });
+            bossPrompt.appendChild(button);
+        });
+
+        document.body.appendChild(bossPrompt);
+    }
+
+    // Collect bonus
+    function collectBonus(bonus, index) {
+        gameState.bonuses.splice(index, 1);
+        gameState.score += 50;
+        gameState.eden.health = Math.min(gameState.eden.health + 10, 100);
+        showCollectionEffect(bonus);
+    }
+
+    // Show collision effect
+    function showCollisionEffect(object) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(object.x + object.width / 2, object.y + object.height / 2, 20, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+    // Show collection effect
+    function showCollectionEffect(object) {
+        ctx.fillStyle = 'green';
+        ctx.beginPath();
+        ctx.arc(object.x + object.width / 2, object.y + object.height / 2, 20, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+    // Check collision between two rectangles
+    function checkCollision(rect1, rect2) {
+        return rect1.x < rect2.x + rect2.width &&
+            rect1.x + rect1.width > rect2.x &&
+            rect1.y < rect2.y + rect2.height &&
+            rect1.y + rect1.height > rect2.y;
+    }
+
+    // Start the game
+    gameLoop();
+</script>
+</body>
+</html>

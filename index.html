@@ -90,7 +90,8 @@
         therapy: new Image(),
         poppop: new Image(),
         haley: new Image(),
-        jonathan: new Image()
+        jonathan: new Image(),
+        adam: new Image(),
     };
 
     const configuration = {
@@ -111,6 +112,7 @@
     images.haley.src = 'https://d1hbpr09pwz0sk.cloudfront.net/profile_pic/haley-tanenbaum-ef7c7a4f';
     images.jonathan.src = 'https://images.squarespace-cdn.com/content/v1/6605bb2b36988505ef812dda/42257c89-803d-4a72-a473-37c68a5dcfc7/TAN_polaroidNote.png?format=1000w';
     images.scot.src = 'https://miro.medium.com/v2/resize:fit:2400/1*jPIwQyBjRnZ4ShS5K2xIKw.jpeg'
+    images.adam.src = 'https://yt3.googleusercontent.com/ytc/AIdro_kyrlEwy7066SJhd05TNttudvq8rHWVisNwlEOI_RQrVeg=s900-c-k-c0x00ffffff-no-rj';
 
     // Wait for all images to load before starting the game
     Promise.all(Object.values(images).map(img => new Promise(resolve => img.onload = resolve)))
@@ -141,7 +143,8 @@
         paused: false,
         time: 0,
         minTimeToSpawnJonathan: null,
-        gameOverMessage: 'Game Over!'
+        gameOverMessage: 'Game Over!',
+        collisions: [],
     };
 
     // Obstacle types
@@ -162,7 +165,8 @@
     // Boss type
     const bossTypes = [
         { name: 'A Hungry Walzer', width: 80, height: 100, question: 'Oh no! You ran into a Hungry Walzer! What should you do?', answers: ['Feed her immediately', 'Call Dan.', 'Fight with her.'], correctAnswer: 'Feed her immediately', image: images.walzer},
-        { name: 'Haley', width: 80, height: 100, question: 'Oh no! Haley is getting married! What should you do?', answers: ['Speak at her wedding', 'Threaten to move to California', 'More therapy'], correctAnswer: 'Speak at her wedding', image: images.haley },
+        { name: 'Haley', width: 100, height: 100, question: 'Oh no! Haley is getting married! What should you do?', answers: ['Speak at her wedding', 'Threaten to move to California', 'More therapy'], correctAnswer: 'Speak at her wedding', image: images.haley },
+        { name: 'Adam', width: 100, height: 100, question: 'Oh no! Adam Erispaha wants to reconnect! What should you do?', answers: ['Sleep with him.', 'Buy his family.', 'More therapy.'], correctAnswer: 'Buy his family.', image: images.adam },
     ];
 
     const jonathan = { name: 'Jonathan', width: 80, height: 100, image: images.jonathan };
@@ -300,6 +304,12 @@
             }
         });
 
+        gameState.collisions.forEach(collision => {
+            if (gameState.time - collision.time < 10) {
+                showCollisionEffect(collision)
+            }
+        });
+
         if (gameState.jonathan) {
             drawImage(jonathan.image, gameState.jonathan.x, gameState.jonathan.y, jonathan.width, jonathan.height, 'green', borderWidth = 20);
         }
@@ -393,7 +403,7 @@
         gameState.eden.health -= 10;
         gameState.eden.invulnerable = true;
         setTimeout(() => { gameState.eden.invulnerable = false; }, 1000);
-        showCollisionEffect(obstacle);
+        gameState.collisions.push({ x: obstacle.x, y: obstacle.y, time: gameState.time, color: 'red', width: obstacle.width, height: obstacle.height });
     }
 
     // Hit boss
@@ -401,7 +411,7 @@
         gameState.eden.health -= 20;
         gameState.eden.invulnerable = true;
         setTimeout(() => { gameState.eden.invulnerable = false; }, 1000);
-        showCollisionEffect(boss);
+        // showCollisionEffect(boss);
         gameState.paused = true;
         showBossPrompt(boss);
     }
@@ -413,13 +423,13 @@
         bossPrompt.style.left = '50%';
         bossPrompt.style.width = '500px';
         bossPrompt.style.textAlign = 'center';
-        bossPrompt.style.height = '200px';
+        bossPrompt.style.minHeight = '200px';
         bossPrompt.style.transform = 'translate(-50%, -50%)';
         bossPrompt.style.backgroundColor = 'white';
         bossPrompt.style.padding = '20px';
         bossPrompt.style.border = '2px solid black';
         bossPrompt.style.borderRadius = '5px';
-        bossPrompt.innerHTML = `<h2>${boss.question}</h2>`;
+        bossPrompt.innerHTML = `<h2>${boss.question}</h2><img src="${boss.image.src}" style="width: 100px; height: 100px; border-radius: 50%;"><br>`;
 
         boss.answers.forEach(answer => {
             const button = document.createElement('button');
@@ -448,22 +458,14 @@
         gameState.bonuses.splice(index, 1);
         gameState.score += 50;
         gameState.eden.health = Math.min(gameState.eden.health + 10, 100);
-        showCollectionEffect(bonus);
+        gameState.collisions.push({ x: bonus.x, y: bonus.y, time: gameState.time, color: 'green', width: bonus.width, height: bonus.height });
     }
 
     // Show collision effect
     function showCollisionEffect(object) {
-        ctx.fillStyle = 'red';
+        ctx.fillStyle = object.color;
         ctx.beginPath();
-        ctx.arc(object.x + object.width / 2, object.y + object.height / 2, 20, 0, 2 * Math.PI);
-        ctx.fill();
-    }
-
-    // Show collection effect
-    function showCollectionEffect(object) {
-        ctx.fillStyle = 'green';
-        ctx.beginPath();
-        ctx.arc(object.x + object.width / 2, object.y + object.height / 2, 20, 0, 2 * Math.PI);
+        ctx.arc(object.x - (0.5 * object.width) + object.width / 2, object.y + object.height / 2, 20, 0, 2 * Math.PI);
         ctx.fill();
     }
 

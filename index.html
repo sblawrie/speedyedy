@@ -57,9 +57,10 @@
         <p>Help Eden navigate through life's challenges!</p>
         <ul>
             <li>Press <strong>Spacebar</strong> to make Eden jump</li>
-            <li>Avoid obstacles (purple, brown, gray figures)</li>
-            <li>Collect bonuses (yellow, light blue, gold figures)</li>
-            <li>Watch out for the big red boss!</li>
+            <li>Avoid obstacles (red borders) or take a hit to your health.</li>
+            <li>Collect bonuses (green borders) to rejuvenate and get score bonuses.</li>
+            <li>Watch out for the big red blinking bosses! Important: when you see them, you must defeat them by colliding with them!</li>
+            <li>You win by reaching Jonathan 🤤</li>
         </ul>
         <p>Stay healthy and score as high as you can!</p>
     </div>
@@ -131,6 +132,7 @@
         therapy: new Image(),
         poppop: new Image(),
         haley: new Image(),
+        jonathan: new Image()
     };
 
     const configuration = {
@@ -149,14 +151,8 @@
     images.therapy.src = 'https://www.verywellmind.com/thmb/aNigsYshgeBFgbu1_DsvnNsYEHs=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-1368615203-4c27e5cf53214c59b5243fffe2cb7f24.jpg';
     images.poppop.src = 'https://imageio.forbes.com/specials-images/imageserve/5ba5182d4bbe6f79516f57f2/0x0.jpg?format=jpg&crop=2615,2615,x12,y6,safe&height=416&width=416&fit=bounds';
     images.haley.src = 'https://d1hbpr09pwz0sk.cloudfront.net/profile_pic/haley-tanenbaum-ef7c7a4f';
-    images.toxicRelationship.src = 'path/to/toxic-relationship.png';
-    images.financialStress.src = 'path/to/financial-stress.png';
-    images.workPressure.src = 'path/to/work-pressure.png';
-    images.supportiveFriend.src = 'path/to/supportive-friend.png';
+    images.jonathan.src = 'https://images.squarespace-cdn.com/content/v1/6605bb2b36988505ef812dda/42257c89-803d-4a72-a473-37c68a5dcfc7/TAN_polaroidNote.png?format=1000w';
     images.scot.src = 'https://miro.medium.com/v2/resize:fit:2400/1*jPIwQyBjRnZ4ShS5K2xIKw.jpeg'
-    images.selfCare.src = 'path/to/self-care.png';
-    images.careerAchievement.src = 'path/to/career-achievement.png';
-    images.boss.src = 'path/to/boss.png';
 
     // Wait for all images to load before starting the game
     Promise.all(Object.values(images).map(img => new Promise(resolve => img.onload = resolve)))
@@ -181,6 +177,7 @@
         obstacles: [],
         bonuses: [],
         bosses: [],
+        jonathan: null,
         score: 0,
         gameOver: false,
         paused: false,
@@ -208,6 +205,8 @@
         { name: 'A Hungry Walzer', width: 80, height: 100, question: 'Oh no! You ran into a Hungry Walzer! What should you do?', answers: ['Feed her immediately', 'Call Dan.', 'Fight with her.'], correctAnswer: 'Feed her immediately', image: images.walzer},
         { name: 'Haley', width: 80, height: 100, question: 'Oh no! Haley is getting married! What should you do?', answers: ['Speak at her wedding', 'Threaten to move to California', 'More therapy'], correctAnswer: 'Speak at her wedding', image: images.haley },
     ];
+
+    const jonathan = { name: 'Jonathan', width: 80, height: 100, image: images.jonathan };
 
     // Set canvas size and adjust game elements
     function resizeCanvas() {
@@ -282,6 +281,13 @@
             }
         });
 
+        if (gameState.jonathan) {
+            gameState.jonathan.x -= 2;
+            if (checkCollision(gameState.eden, gameState.jonathan)) {
+                gameState.gameOver = true;
+            }
+        };
+
         // Move boss and check collision
         if (gameState.bosses.length > 0) {
             const boss = gameState.bosses[0];
@@ -296,9 +302,10 @@
         }
 
         // Spawn new obstacles, bonuses, and bosses
+        if (!gameState.jonathan && !bossTypes.length) spawnJonathan();
         if (Math.random() < 0.01) spawnObstacle();
         if (Math.random() < 0.01) spawnBonus();
-        if (gameState.bosses.length === 0 && bossTypes.length && Math.random() < 0.001) spawnBoss();
+        if (gameState.bosses.length === 0 && bossTypes.length && Math.random() < 0.002) spawnBoss();
 
         // Check for game over
         if (gameState.eden.health <= 0) {
@@ -338,6 +345,10 @@
             }
             // drawImage(boss.image, boss.x, boss.y, boss.width, boss.height, 'red', borderWidth = 8);
         });
+
+        if (gameState.jonathan) {
+            drawImage(jonathan.image, gameState.jonathan.x, gameState.jonathan.y, jonathan.width, jonathan.height, 'green', borderWidth = 20);
+        }
 
         // Draw health bar
         ctx.fillStyle = 'red';
@@ -418,6 +429,15 @@
         bossTypes.splice(bossIndex, 1);
     }
 
+    function spawnJonathan() {
+        console.log('spawning jonathan');
+        gameState.jonathan = {
+            ...jonathan,
+            x: canvas.width,
+            y: canvas.height - 100 - jonathan.height
+        };
+    }
+
     // Hit obstacle
     function hitObstacle(obstacle) {
         gameState.eden.health -= 10;
@@ -456,7 +476,6 @@
             button.className = 'answerButton';
             button.textContent = answer;
             button.addEventListener('click', () => {
-                console.log('clicked');
                 if (answer === boss.correctAnswer) {
                     gameState.bosses.pop();
                     gameState.score += 100;

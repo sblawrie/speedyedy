@@ -150,8 +150,8 @@
 
     // Obstacle types
     const obstacleTypes = [
-        { name: 'Klonopin', width: 50, height: 50, image: images.klonopin },
-        { name: 'Dan', width: 50, height: 75, image: images.dan },
+        { name: 'Klonopin', width: 60, height: 60, image: images.klonopin },
+        { name: 'Dan', width: 50, height: 70, image: images.dan },
         { name: 'Nationals', width: 50, height: 50, image: images.nationals },
     ];
 
@@ -302,7 +302,7 @@
         // Draw boss
         gameState.bosses.forEach(boss => {
             if (gameState.time % 20 < 10) {
-                drawImage(boss.image, boss.x, boss.y, boss.width, boss.height, 'red', borderWidth = 8);
+                drawImage(boss.image, boss.x, boss.y, boss.width, boss.height, 'orange', borderWidth = 8);
             }
         });
 

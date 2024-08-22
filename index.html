@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speedy Edy</title>
     <style>
+        #error-message {
+            display: none;
+            background-color: #ffcccb;
+            color: #000;
+            padding: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -23,6 +32,15 @@
             max-width: 90vw;
             width: 800px;
             margin-top:60px;
+        }
+        /* Show error message if screen width is less than 1024px */
+        @media screen and (max-width: 1024px) {
+            .hideOnSmallScreen {
+                display: none !important;
+            }
+            #error-message {
+                display: block;
+            }
         }
         #gameCanvas {
             width: 100%;
@@ -58,7 +76,13 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
-<div id="gameContainer">
+<div id="error-message">
+    Oh no!
+    Your screen is too small to play this game.
+    Are you poor?
+    Please use a larger screen.
+</div>
+<div id="gameContainer" class="hideOnSmallScreen">
     <div id="alert"></div>
     <canvas id="gameCanvas"></canvas>
     <div id="directions" class="bg-gray-100 p-6 rounded-lg shadow-lg mx-auto mt-8">
@@ -441,6 +465,7 @@
 
     function showBossPrompt(boss) {
         const bossPrompt = document.createElement('div');
+        bossPrompt.className = 'hideOnSmallScreen';
         bossPrompt.style.position = 'absolute';
         bossPrompt.style.top = '50%';
         bossPrompt.style.left = '50%';
@@ -452,6 +477,10 @@
         bossPrompt.style.padding = '20px';
         bossPrompt.style.border = '2px solid black';
         bossPrompt.style.borderRadius = '5px';
+        bossPrompt.style.display = 'flex';
+        bossPrompt.style.flexDirection = 'column';
+        bossPrompt.style.alignItems = 'center';
+        bossPrompt.style.justifyContent = 'center';
         bossPrompt.innerHTML = `<h2>${boss.question}</h2><img src="${boss.image.src}" style="width: 100px; height: 100px; border-radius: 50%;"><br>`;
 
         boss.answers.forEach(answer => {
